@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ComparteLab - Sistema de Préstamo de Equipo de Laboratorio">
+  <title>ComparteLab | Préstamo de Equipo de Laboratorio</title>
+
+  <!-- Bootstrap 5 CSS CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+    crossorigin="anonymous"
+  >
+  <!-- Bootstrap Icons CDN -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+  >
+</head>
+<body class="bg-light min-vh-100 d-flex flex-column">
+
+  <!-- Barra de navegación superior -->
+  <header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#">
+          <i class="bi bi-box-seam-fill fs-4"></i>
+          <span>ComparteLab</span>
+        </a>
+        <span class="navbar-text text-white-50 d-none d-sm-inline">
+          Gestión de Préstamo de Equipo de Laboratorio
+        </span>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="container my-4 flex-grow-1">
+
+    <!-- Contenedor dinámico de alertas -->
+    <div id="alert-container" aria-live="polite" aria-atomic="true" class="mb-3"></div>
+
+    <div class="row g-4">
+      
+      <!-- Sección: Formulario de Registro -->
+      <section class="col-12 col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header bg-white border-bottom py-3">
+            <h2 class="h5 card-title mb-0 text-primary d-flex align-items-center gap-2">
+              <i class="bi bi-file-earmark-plus"></i> Nueva Solicitud
+            </h2>
+          </div>
+          <div class="card-body">
+            <form id="solicitud-form" class="needs-validation" novalidate>
+              
+              <!-- Matrícula -->
+              <div class="mb-3">
+                <label for="matricula" class="form-label fw-semibold">Matrícula</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="matricula"
+                    name="matricula"
+                    placeholder="Ej. A01234567"
+                    required
+                    pattern="^[a-zA-Z0-9\-]+$"
+                  >
+                  <div class="invalid-feedback">
+                    Por favor, ingresa una matrícula válida.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nombre del Alumno -->
+              <div class="mb-3">
+                <label for="nombre_alumno" class="form-label fw-semibold">Nombre del Alumno</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text"><i class="bi bi-person"></i></span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="nombre_alumno"
+                    name="nombre_alumno"
+                    placeholder="Ej. Carlos Mendoza"
+                    required
+                    minlength="3"
+                  >
+                  <div class="invalid-feedback">
+                    Ingresa el nombre completo del alumno (mínimo 3 caracteres).
+                  </div>
+                </div>
+              </div>
+
+              <!-- ID del Equipo -->
+              <div class="mb-3">
+                <label for="equipo_id" class="form-label fw-semibold">ID del Equipo</label>
+                <div class="input-group has-validation">
+                  <span class="input-group-text"><i class="bi bi-cpu"></i></span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="equipo_id"
+                    name="equipo_id"
+                    placeholder="Ej. 104"
+                    min="1"
+                    step="1"
+                    required
+                  >
+                  <div class="invalid-feedback">
+                    Ingresa un identificador numérico de equipo válido (número entero positivo).
+                  </div>
+                </div>
+              </div>
+
+              <!-- Motivo -->
+              <div class="mb-3">
+                <label for="motivo" class="form-label fw-semibold">Motivo del Préstamo</label>
+                <textarea
+                  class="form-control"
+                  id="motivo"
+                  name="motivo"
+                  rows="3"
+                  placeholder="Describe la práctica o proyecto a realizar..."
+                  required
+                  minlength="5"
+                ></textarea>
+                <div class="invalid-feedback">
+                  El motivo es obligatorio (mínimo 5 caracteres).
+                </div>
+              </div>
+
+              <!-- Botón de Envío con Spinner -->
+              <div class="d-grid mt-4">
+                <button type="submit" id="btn-submit" class="btn btn-primary btn-lg shadow-sm">
+                  <span id="btn-spinner" class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                  <span id="btn-text">
+                    <i class="bi bi-send-fill me-1"></i> Registrar Solicitud
+                  </span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección: Listado de Solicitudes -->
+      <section class="col-12 col-lg-7">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h2 class="h5 card-title mb-0 text-secondary d-flex align-items-center gap-2">
+              <i class="bi bi-card-checklist"></i> Solicitudes Registradas
+            </h2>
+            <button
+              id="btn-reload"
+              type="button"
+              class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+              title="Recargar listado"
+            >
+              <i id="reload-icon" class="bi bi-arrow-clockwise"></i>
+              <span>Recargar</span>
+            </button>
+          </div>
+          
+          <div class="card-body p-0">
+            <!-- Tabla responsiva -->
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="tabla-solicitudes">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" class="ps-3 text-center" style="width: 70px;">ID</th>
+                    <th scope="col">Matrícula</th>
+                    <th scope="col">Alumno</th>
+                    <th scope="col" class="text-center">ID Equipo</th>
+                    <th scope="col" class="text-center pe-3">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="solicitudes-tbody">
+                  <!-- Filas renderizadas dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Loader de Tabla -->
+            <div id="table-loading" class="text-center py-5 d-none">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando solicitudes...</span>
+              </div>
+              <p class="text-muted mt-2 mb-0 small">Obteniendo solicitudes del servidor...</p>
+            </div>
+
+            <!-- Estado Vacío -->
+            <div id="table-empty" class="text-center py-5 d-none">
+              <i class="bi bi-inbox text-muted display-4"></i>
+              <p class="text-muted mt-2 mb-0">No hay solicitudes registradas actualmente.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Pie de Página -->
+  <footer class="bg-white border-top py-3 mt-auto text-center text-muted small">
+    <div class="container">
+      &copy; ComparteLab - Sistema de Préstamo de Equipo de Laboratorio
+    </div>
+  </footer>
+
+  <!-- Bootstrap 5 Bundle JS CDN (incluye Popper) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"
+  ></script>
+
+  <!-- Lógica en JavaScript Vanilla -->
+  <script src="app.js"></script>
+</body>
+</html>
