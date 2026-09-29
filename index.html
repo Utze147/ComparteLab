@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -65,12 +65,13 @@
                     class="form-control"
                     id="matricula"
                     name="matricula"
-                    placeholder="Ej. A01234567"
+                    placeholder="Ej. 2024001"
                     required
-                    pattern="^[a-zA-Z0-9\-]+$"
+                    minlength="3"
+                    maxlength="20"
                   >
                   <div class="invalid-feedback">
-                    Por favor, ingresa una matrícula válida.
+                    Ingresa una matrícula válida (mínimo 3 caracteres).
                   </div>
                 </div>
               </div>
@@ -88,9 +89,10 @@
                     placeholder="Ej. Carlos Mendoza"
                     required
                     minlength="3"
+                    maxlength="100"
                   >
                   <div class="invalid-feedback">
-                    Ingresa el nombre completo del alumno (mínimo 3 caracteres).
+                    Ingresa el nombre completo del alumno.
                   </div>
                 </div>
               </div>
@@ -105,13 +107,13 @@
                     class="form-control"
                     id="equipo_id"
                     name="equipo_id"
-                    placeholder="Ej. 104"
+                    placeholder="Ej. 101"
                     min="1"
                     step="1"
                     required
                   >
                   <div class="invalid-feedback">
-                    Ingresa un identificador numérico de equipo válido (número entero positivo).
+                    Ingresa un identificador numérico de equipo mayor a 0.
                   </div>
                 </div>
               </div>
@@ -127,6 +129,7 @@
                   placeholder="Describe la práctica o proyecto a realizar..."
                   required
                   minlength="5"
+                  maxlength="300"
                 ></textarea>
                 <div class="invalid-feedback">
                   El motivo es obligatorio (mínimo 5 caracteres).
@@ -172,11 +175,13 @@
               <table class="table table-hover align-middle mb-0" id="tabla-solicitudes">
                 <thead class="table-light">
                   <tr>
-                    <th scope="col" class="ps-3 text-center" style="width: 70px;">ID</th>
+                    <th scope="col" class="ps-3 text-center" style="width: 60px;">ID</th>
                     <th scope="col">Matrícula</th>
                     <th scope="col">Alumno</th>
-                    <th scope="col" class="text-center">ID Equipo</th>
-                    <th scope="col" class="text-center pe-3">Estado</th>
+                    <th scope="col" class="text-center">Equipo</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col" class="text-center">Estado</th>
+                    <th scope="col" class="text-center pe-3">Acción</th>
                   </tr>
                 </thead>
                 <tbody id="solicitudes-tbody">
@@ -190,7 +195,7 @@
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Cargando solicitudes...</span>
               </div>
-              <p class="text-muted mt-2 mb-0 small">Obteniendo solicitudes del servidor...</p>
+              <p class="text-muted mt-2 mb-0 small">Cargando solicitudes...</p>
             </div>
 
             <!-- Estado Vacío -->
