@@ -1,0 +1,563 @@
+openapi: 3.1.2
+info:
+  title: API de Préstamo de Equipos
+  version: 1.0.0
+  description: >
+    API REST para consultar equipos de cómputo y administrar préstamos y devoluciones
+    del Instituto Tecnológico de Chiná. Cumple con reglas de negocio e integridad.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Servidor local de desarrollo
+
+tags:
+  - name: Equipos
+    description: Operaciones de catálogo e inventario de equipos
+  - name: Prestamos
+    description: Registro de préstamos y devoluciones
+
+paths:
+  /equipos:
+    get:
+      tags:
+        - Equipos
+      summary: Listar equipos
+      description: Obtiene la lista de equipos registrados con soporte de filtros y paginación.
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          description: Filtra los equipos por su estado actual
+          schema:
+            type: string
+            enum:
+              - disponible
+              - prestado
+              - mantenimiento
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - laptop
+              - proyector
+        - name: buscar
+          in: query
+          required: false
+          description: Búsqueda parcial por marca
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Lista de equipos obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipo"
+
+    post:
+      tags:
+        - Equipos
+      summary: Registrar un nuevo equipo
+      description: Crea un equipo en el inventario. Todo equipo nuevo inicia automáticamente con estado "disponible".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipoCreate"
+            examples:
+              equipoNuevo:
+                value:
+                  tipo: laptop
+                  marca: Lenovo
+                  modelo: ThinkPad
+                  numero_inventario: ITCH-PC-050
+      responses:
+        "201":
+          description: Equipo creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipo"
+        "409":
+          description: Número de inventario duplicado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                inventarioDuplicado:
+                  value:
+                    error:
+                      codigo: INVENTARIO_DUPLICADO
+                      mensaje: Ya existe un equipo con ese número de inventario.
+        "422":
+          $ref: "#/components/responses/DatosInvalidos"
+
+  /equipos/{equipoId}:
+    get:
+      tags:
+        - Equipos
+      summary: Consultar un equipo por ID
+      parameters:
+        - $ref: "#/components/parameters/EquipoId"
+      responses:
+        "200":
+          description: Equipo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipo"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "422":
+          $ref: "#/components/responses/DatosInvalidos"
+
+    patch:
+      tags:
+        - Equipos
+      summary: Modificar parcialmente un equipo
+      parameters:
+        - $ref: "#/components/parameters/EquipoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EquipoUpdate"
+            examples:
+              enviarAMantenimiento:
+                value:
+                  estado: mantenimiento
+      responses:
+        "200":
+          description: Equipo actualizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipo"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "422":
+          $ref: "#/components/responses/DatosInvalidos"
+
+    delete:
+      tags:
+        - Equipos
+      summary: Eliminar un equipo
+      description: Elimina un equipo del inventario siempre que no se encuentre actualmente prestado.
+      parameters:
+        - $ref: "#/components/parameters/EquipoId"
+      responses:
+        "204":
+          description: Equipo eliminado correctamente (sin contenido)
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: Conflicto al intentar eliminar un equipo prestado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                equipoConPrestamo:
+                  value:
+                    error:
+                      codigo: EQUIPO_CON_PRESTAMO
+                      mensaje: No se puede eliminar un equipo prestado.
+
+  /prestamos:
+    get:
+      tags:
+        - Prestamos
+      summary: Listar préstamos
+      parameters:
+        - name: usuario_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - activo
+              - devuelto
+      responses:
+        "200":
+          description: Lista de préstamos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prestamo"
+
+    post:
+      tags:
+        - Prestamos
+      summary: Crear un préstamo
+      description: >
+        Registra un nuevo préstamo en una sola transacción.
+        Reglas de negocio: El usuario debe existir y estar activo (RN-01/RN-02),
+        tener menos de dos préstamos activos (RN-03) y el equipo solicitado debe
+        existir y encontrarse disponible (RN-04/RN-05). Al crearse, el equipo pasa a "prestado" (RN-06).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NuevoPrestamo"
+            examples:
+              prestamoValido:
+                value:
+                  usuario_id: 25
+                  equipo_id: 8
+                  fecha_esperada_devolucion: "2026-10-18"
+      responses:
+        "201":
+          description: Préstamo creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prestamo"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: Conflicto con una regla de negocio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                equipoNoDisponible:
+                  value:
+                    error:
+                      codigo: EQUIPO_NO_DISPONIBLE
+                      mensaje: El equipo solicitado no está disponible.
+                usuarioInactivo:
+                  value:
+                    error:
+                      codigo: USUARIO_INACTIVO
+                      mensaje: El usuario no puede realizar préstamos.
+                limitePrestamos:
+                  value:
+                    error:
+                      codigo: LIMITE_PRESTAMOS
+                      mensaje: El usuario ya tiene dos préstamos activos.
+        "422":
+          $ref: "#/components/responses/DatosInvalidos"
+
+  /prestamos/{prestamoId}:
+    get:
+      tags:
+        - Prestamos
+      summary: Consultar un préstamo por ID
+      parameters:
+        - $ref: "#/components/parameters/PrestamoId"
+      responses:
+        "200":
+          description: Préstamo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prestamo"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+
+    patch:
+      tags:
+        - Prestamos
+      summary: Registrar devolución de equipo
+      description: >
+        Actualiza el préstamo a "devuelto", registra la fecha de devolución
+        y libera el equipo asociado cambiándolo a "disponible" (RN-07).
+      parameters:
+        - $ref: "#/components/parameters/PrestamoId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevolucionUpdate"
+            examples:
+              devolucionEjemplo:
+                value:
+                  fecha_devolucion: "2026-10-17"
+      responses:
+        "200":
+          description: Devolución registrada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prestamo"
+        "404":
+          $ref: "#/components/responses/NoEncontrado"
+        "409":
+          description: El préstamo ya había sido devuelto previamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                prestamoYaDevuelto:
+                  value:
+                    error:
+                      codigo: PRESTAMO_YA_DEVUELTO
+                      mensaje: El préstamo ya fue devuelto.
+        "422":
+          $ref: "#/components/responses/DatosInvalidos"
+
+components:
+  parameters:
+    EquipoId:
+      name: equipoId
+      in: path
+      required: true
+      description: Identificador único del equipo
+      schema:
+        type: integer
+        minimum: 1
+
+    PrestamoId:
+      name: prestamoId
+      in: path
+      required: true
+      description: Identificador único del préstamo
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    Equipo:
+      type: object
+      required:
+        - id
+        - tipo
+        - marca
+        - modelo
+        - numero_inventario
+        - estado
+      properties:
+        id:
+          type: integer
+          example: 8
+        tipo:
+          type: string
+          enum:
+            - laptop
+            - proyector
+          example: laptop
+        marca:
+          type: string
+          example: Dell
+        modelo:
+          type: string
+          example: Latitude 5540
+        numero_inventario:
+          type: string
+          example: ITCH-PC-008
+        estado:
+          type: string
+          enum:
+            - disponible
+            - prestado
+            - mantenimiento
+          example: disponible
+
+    EquipoCreate:
+      type: object
+      additionalProperties: false
+      required:
+        - tipo
+        - marca
+        - modelo
+        - numero_inventario
+      properties:
+        tipo:
+          type: string
+          enum:
+            - laptop
+            - proyector
+        marca:
+          type: string
+          minLength: 2
+          maxLength: 50
+        modelo:
+          type: string
+          minLength: 1
+          maxLength: 80
+        numero_inventario:
+          type: string
+          minLength: 3
+          maxLength: 50
+
+    EquipoUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        tipo:
+          type: string
+          enum:
+            - laptop
+            - proyector
+        marca:
+          type: string
+          minLength: 2
+          maxLength: 50
+        modelo:
+          type: string
+          minLength: 1
+          maxLength: 80
+        estado:
+          type: string
+          enum:
+            - disponible
+            - prestado
+            - mantenimiento
+
+    NuevoPrestamo:
+      type: object
+      additionalProperties: false
+      required:
+        - usuario_id
+        - equipo_id
+        - fecha_esperada_devolucion
+      properties:
+        usuario_id:
+          type: integer
+          minimum: 1
+          example: 25
+        equipo_id:
+          type: integer
+          minimum: 1
+          example: 8
+        fecha_esperada_devolucion:
+          type: string
+          format: date
+          example: "2026-10-18"
+
+    DevolucionUpdate:
+      type: object
+      additionalProperties: false
+      required:
+        - fecha_devolucion
+      properties:
+        fecha_devolucion:
+          type: string
+          format: date
+          example: "2026-10-17"
+
+    Prestamo:
+      type: object
+      required:
+        - id
+        - usuario_id
+        - equipo_id
+        - fecha_prestamo
+        - fecha_esperada_devolucion
+        - estado
+      properties:
+        id:
+          type: integer
+          example: 152
+        usuario_id:
+          type: integer
+          example: 25
+        equipo_id:
+          type: integer
+          example: 8
+        fecha_prestamo:
+          type: string
+          format: date-time
+          example: "2026-10-16T14:30:00Z"
+        fecha_esperada_devolucion:
+          type: string
+          format: date
+          example: "2026-10-18"
+        fecha_devolucion:
+          type:
+            - string
+            - "null"
+          format: date
+          example: null
+        estado:
+          type: string
+          enum:
+            - activo
+            - devuelto
+          example: activo
+
+    ErrorDetalle:
+      type: object
+      required:
+        - codigo
+        - mensaje
+      properties:
+        codigo:
+          type: string
+          example: EQUIPO_NO_DISPONIBLE
+        mensaje:
+          type: string
+          example: El equipo solicitado no está disponible.
+        detalles:
+          type: array
+          items:
+            type: object
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorDetalle"
+
+  responses:
+    DatosInvalidos:
+      description: La solicitud contiene datos de entrada inválidos (fallo de validación)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            validacionFallida:
+              value:
+                error:
+                  codigo: DATOS_INVALIDOS
+                  mensaje: La solicitud contiene datos inválidos.
+
+    NoEncontrado:
+      description: El recurso solicitado o referenciado no existe
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            equipoNoEncontrado:
+              value:
+                error:
+                  codigo: EQUIPO_NO_ENCONTRADO
+                  mensaje: El equipo solicitado no existe.

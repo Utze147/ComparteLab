@@ -1,0 +1,142 @@
+openapi: 3.1.2
+info:
+  title: API de Préstamo de Equipos
+  version: 0.1.0
+  description: Borrador inicial de la API para consultar equipos y administrar préstamos.
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Servidor de desarrollo
+
+paths:
+  /equipos:
+    get:
+      summary: Listar equipos
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de equipos obtenida correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipo"
+
+  /equipos/{equipoId}:
+    get:
+      summary: Consultar un equipo
+      parameters:
+        - name: equipoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Equipo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Equipo"
+
+  /prestamos:
+    post:
+      summary: Crear un préstamo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NuevoPrestamo"
+      responses:
+        "201":
+          description: Préstamo creado
+
+  /prestamos/{prestamoId}:
+    get:
+      summary: Consultar un préstamo
+      parameters:
+        - name: prestamoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Préstamo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prestamo"
+    patch:
+      summary: Registrar devolución
+      parameters:
+        - name: prestamoId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fechaDevolucion:
+                  type: string
+      responses:
+        "200":
+          description: Devolución registrada
+
+components:
+  schemas:
+    Equipo:
+      type: object
+      properties:
+        id:
+          type: integer
+        tipo:
+          type: string
+        marca:
+          type: string
+        modelo:
+          type: string
+        numeroInventario:
+          type: string
+        estado:
+          type: string
+
+    NuevoPrestamo:
+      type: object
+      properties:
+        usuarioId:
+          type: integer
+        equipoId:
+          type: integer
+        fechaEsperadaDevolucion:
+          type: string
+
+    Prestamo:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuarioId:
+          type: integer
+        equipoId:
+          type: integer
+        fechaPrestamo:
+          type: string
+        fechaEsperadaDevolucion:
+          type: string
+        fechaDevolucion:
+          type: string
+        estado:
+          type: string
