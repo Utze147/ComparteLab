@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Préstamo de Equipos - Cliente Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="mb-4">Sistema de Préstamo de Equipos</h1>
+        <p class="text-muted">Cliente JavaScript independiente (HTML5 + Bootstrap) consumiendo una API REST en
+            Python/FastAPI.</p>
+
+        <!-- Alertas dinámicas -->
+        <div id="mensaje" class="alert d-none" role="alert"></div>
+
+        <!-- Indicador de Carga -->
+        <div id="cargando" class="text-center d-none my-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Consultando API...</p>
+        </div>
+
+        <!-- Formulario para Registrar Equipo (POST) -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-success text-white"><strong>Registrar Nuevo Equipo</strong></div>
+            <div class="card-body">
+                <form id="formEquipo">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Tipo</label>
+                            <select id="tipo" class="form-select" required>
+                                <option value="laptop">Laptop</option>
+                                <option value="proyector">Proyector</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Marca</label>
+                            <input id="marca" class="form-control" placeholder="Ej. Dell" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Modelo</label>
+                            <input id="modelo" class="form-control" placeholder="Ej. Latitude 5540" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Número de inventario</label>
+                            <input id="inventario" class="form-control" placeholder="Ej. ITCH-PC-050" required>
+                        </div>
+                    </div>
+                    <button class="btn btn-success mt-3" type="submit">Registrar equipo</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de Equipos Registrados (GET) -->
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong>Equipos Registrados</strong>
+                <button id="btnActualizar" class="btn btn-primary btn-sm">Actualizar lista</button>
+            </div>
+            <div class="card-body">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Inventario</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaEquipos"></tbody>
+                </table>
+                <div id="sinDatos" class="alert alert-secondary d-none text-center">No existen equipos registrados.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
